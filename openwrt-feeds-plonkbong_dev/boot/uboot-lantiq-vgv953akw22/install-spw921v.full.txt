@@ -1,0 +1,223 @@
+
+
+Installation: at the moment 05/2022 is the only way to install openwrt
+via: 
+- opening the router case and connect to the serial connection
+- debricking the router via UART
+- install your own u-boot
+- start the openwrt ramdisk
+- install openwrt
+
+note:
+#> means put a command on your PC
+#< get output from a command on PC
+>> put a command on your serial router console
+>< get output from serial router console
+
+A.1 Download or Build all required Files:
+###########################################################################
+You need:
+- u-boot UART ramdisk images called "u-boot.asc" for debricking or 
+starting via UART
+found in: targets/lantiq/xrx200/u-boot-vgv953akw22_ram/
+- u-boot LZO-NANDTPL image"u-boot.ltq.lzo.nandtpl" this bootloader 
+will install on NAND flash
+found in: targets/lantiq/xrx200/u-boot-vgv953akw22_nandtpl
+- The initramdisk-kernel-image
+called: 
+openwrt-*-arcadyan_vgv953akw22-b-23-vpe-initramfs-kernel.bin
+it exist two variants with -vpe- or -smp- for SMP support or Telefon 
+support
+found in: targets/lantiq/xrx200
+- The squashfs sysupgrade installation image
+called: 
+openwrt-*-arcadyan_vgv953akw22-b-23-smp-squashfs-sysupgrade.bin
+for SMP support but no FXS telefon ports working
+openwrt-*-arcadyan_vgv953akw22-b-23-vpe-squashfs-sysupgrade.bin
+support of telefon-FXS ports but no SMP support
+found in: targets/lantiq/xrx200
+
+
+
+B.1 Opening the case
+###########################################################################
+no description yet
+
+
+
+C.1 Connect via Serial connection
+###########################################################################
+C.1.1 
+do step B.1
+
+C.1.2
+Connect to the serial connection and start the terminal on PC
+The serial connection is on the ethernet connector side. On opposide of 
+the ethernet connector near the flashchip, elkos and "dect antenna 3"
+It is a four pin header which can easy connect without soldering
+
+Parameter are: 3,3V / 115200-N-8
+
+The connector is descripe with:
+triangle 1: VCC do not connect here this will make damage
+2: TX connect to your adapter RX
+3: RX connect to your adapter TX
+(nothing): GND connect to your adapter GND
+
+For example you can use screen:
+#> screen /dev/ttyUSB0 115200
+
+
+
+D.1 Debrick the Router via UART
+###########################################################################
+D.1.1 
+do step A.1 and B.1
+
+D.1.2 
+Connect the LAN cable. Only the two ports near power adapter are working
+Close the network manager etc. do not use dhcp
+
+D.1.3 
+Get UART console on your serial connection:
+Shorting R133 solder pads (no resistor, next to the shield in the middle 
+in opposite to the side with the connectors) with a screw 
+(or I use a ball of aluminum foil) and powering on the device. 
+Your terminal must show “CFG 04” somewhere and “UART” in the last line. 
+like this:
+>< ROM VER: 1.1.4
+>< CFG 04
+>< EEPROM Data OK
+>< UART
+The R133 short can be removed now.
+
+D.1.4 
+Upload the u-boot ram image (it will start automatic):
+close the screen console via
+#> killall screen
+then upload the u-boot ram image
+#> cat u-boot-vgv953_ram/u-boot.asc > /dev/ttyUSB0
+It will be a longer time (some minutes) 
+If the command ready
+
+D.1.5
+Test the ethenet connection:
+Reset your ethernet adapter on PC
+for ex. via:
+#> ifconfig eth0 0.0.0.0 down; ifconfig eth0 192.168.1.2 up
+open the terminal again:
+#> screen /dev/ttyUSB0 115200
+and ping your PC
+>> ping 192.168.1.2
+>< ltq_phy: addr 0, link 0, speed 10, duplex 0
+>< ltq_phy: addr 1, link 1, speed 1000, duplex 1
+>< ltq_phy: addr 17, link 0, speed 10, duplex 0
+>< ltq_phy: addr 19, link 0, speed 10, duplex 0
+>< Using ltq-eth device
+>< host 192.168.1.2 is alive
+note: it is a very raw protocol implemention on u-boot a ping from your PC
+to router are not possible
+
+
+
+E.1 Save the data from flash
+###########################################################################
+no description yet
+in short words:
+use step A.1 - D.1
+upload and run the initramdisk-kernel-image dump all partitions
+
+
+
+F.1 Replace the stock bootloader with your own
+###########################################################################
+F.1.1 
+use step A.1 - E.1 and repeat D.1 optional but usefull
+or use step A.1 - D.1
+
+F.1.2
+Prepare your tftp server on PC
+restart the Network
+#> ifconfig eth0 0.0.0.0 down; ifconfig eth0 192.168.1.2 up
+
+copy the initramdisk-kernel-image to the tftp-dir
+#> mkdir -p /tmp/tftp
+#> cp -vf ./u-boot.ltq.lzo.nandtpl /tmp/tftp/u-boot.ltq.lzo.nandtpl
+#> chmod -R 0777 /tmp/tftp
+
+restart tftp server
+#> dnsmasq -d -p 0 --enable-tftp=eth0 --tftp-root=/tmp/tftp &
+
+F.1.3
+upload the u-boot.ltq.lzo.nandtpl
+>> tftpboot u-boot.ltq.lzo.nandtpl
+This pull the u-boot image and place them normaly on address 0x81000000
+(lock at loadaddress)
+remember the filesize in hex which is shown
+
+No idea erase the chip first ?
+>> nand erase.chip
+
+Write the u-boot image to flash
+>> nand write 0x81000000 0 0x<remembered filesize in hex>
+
+Prepare the bootparameter for booting
+>> setenv nboot 'nand read 0x80800000 0x60000 0x400000; bootm 0x80800000'
+>> setenv bootcmd 'run nboot'
+
+Clear the space after bootloader ?
+>> nand erase 0x60000 0x1fa0000
+
+Repower your router for reset
+Now you should have a u-boot console from your own bootloader
+
+
+
+G.1 Start the initramdisk-kernel-image
+###########################################################################
+G.1.1 
+start the u-boot step D.1 or F.1 
+
+G.1.2
+Prepare for uploading on PC
+restart the Network
+#> ifconfig eth0 0.0.0.0 down; ifconfig eth0 192.168.1.2 up
+
+copy the initramdisk-kernel-image to the tftp-dir
+#> cp -vf ./openwrt-*-arcadyan_vgv953akw22-b-23-vpe-initramfs-kernel.bin \
+/tmp/tftp/ramdisk.img ; chmod -R 0777 /tmp/tftp
+
+restart tftp server
+#> dnsmasq -d -p 0 --enable-tftp=eth0 --tftp-root=/tmp/tftp &
+
+G.1.3
+Upload and start the ramdisk on router
+>> tftpboot ramdisk.img
+>> bootm
+The router will now start the openwrt ramdisk
+
+G.1.4
+Restart your network device
+Enable your network manager or run 
+ifconfig eth0 0.0.0.0 down; ifconfig eth0 192.168.1.2 up
+again
+be shure you can ping your router from PC
+#> ping 192.168.1.1
+
+
+
+H.1 Install the Openwrt Image
+###########################################################################
+H.1.1
+use step G.1
+
+H.1.2
+copy your openwrt-squashfs-sysupgrade-image to the router via
+#> scp ./openwrt-*-arcadyan_vgv953akw22-b-23-vpe-squashfs-sysupgrade.bin \
+root@192.168.1.1://tmp
+
+H.1.3 Install the squashfs image:
+>> sysupgrade -n -v -f \
+/tmp/openwrt-*-arcadyan_vgv953akw22-b-23-vpe-squashfs-sysupgrade.bin
+
+

@@ -1,0 +1,29 @@
+From 38e274602638a8684ab2a57eb29f0f183fff4940 Mon Sep 17 00:00:00 2001
+From: Jonas Albrecht <plonkbong100@protonmail.com>
+Date: Sun, 8 May 2022 15:15:07 +0000
+Subject: [PATCH] MIPS: add support for Arcadyan VGV953AKW22 (2/2)
+
+Add support for Arcadyan VGV953AKW22-* devices
+This add entry inside the boards.cfg
+
+Signed-off-by: Jonas Albrecht <plonkbong100@protonmail.com>
+---
+ boards.cfg | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/boards.cfg b/boards.cfg
+index 4919982..9afa66c 100644
+--- a/boards.cfg
++++ b/boards.cfg
+@@ -543,6 +543,8 @@ Active  mips        mips32         vrx200      arcadyan        vgv7510kw22
+ Active  mips        mips32         vrx200      arcadyan        vgv7519             vgv7519_brn                          vgv7519:SYS_BOOT_BRN                                                                                                              Mathias Kresin <dev@kresin.me>
+ Active  mips        mips32         vrx200      arcadyan        vgv7519             vgv7519_nor                          vgv7519:SYS_BOOT_NOR                                                                                                              Eddi De Pieri <eddi@depieri.net>
+ Active  mips        mips32         vrx200      arcadyan        vgv7519             vgv7519_ram                          vgv7519:SYS_BOOT_RAM                                                                                                              Eddi De Pieri <eddi@depieri.net>
++Active  mips        mips32         vrx200      arcadyan        vgv953akw22         vgv953akw22_ram                      vgv953akw22:SYS_BOOT_RAM                                                                                                             Jonas Albrecht <plonkbong100@protonmail.com>
++Active  mips        mips32         vrx200      arcadyan        vgv953akw22         vgv953akw22_nandtpl                  vgv953akw22:SYS_BOOT_NANDTPL                                                                                                           Jonas Albrecht <plonkbong100@protonmail.com>
+ Active  mips        mips32         vrx200      avm             fb3370              fb3370_eva                           fb3370:SYS_BOOT_EVA                                                                                                               Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+ Active  mips        mips32         vrx200      avm             fb3370              fb3370_ram                           fb3370:SYS_BOOT_RAM                                                                                                               Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+ Active  mips        mips32         vrx200      avm             fb3370              fb3370_sfspl                         fb3370:SYS_BOOT_SFSPL                                                                                                             Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+-- 
+2.32.0
+
